@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Hoshikuzu_ultra.py
-# Full Hoshikuzu bot (help, createvoc, anti-link, config, invites, warns, economy, role UI, keep-alive)
+# Full-featured Hoshikuzu bot (help, createvoc, anti-link, config, invites, warns, economy, role UI, keep-alive)
 # Configure DISCORD_BOT_TOKEN in env before running.
 
 import os
@@ -128,7 +128,7 @@ bot.data_manager = data_manager
 # invites cache
 invites_cache: Dict[int, Dict[str, int]] = {}
 
-# -------------------- Help view --------------------
+# -------------------- Help view (FIXED) --------------------
 HELP_PAGES = [
     {"title":"🎙️ Vocaux","desc":"`+createvoc` `+lockvoc` `+renamevoc` `+limitvoc`"},
     {"title":"💰 Économie","desc":"`+balance` `+daily` `+work` `+give` `+coinflip` `+slots`"},
@@ -143,7 +143,8 @@ class HelpView(discord.ui.View):
         self.page = 0
         self.author_id = author_id
 
-    async def update_message(self, *, interaction: discord.Interaction):
+    async def update_message(self, interaction: discord.Interaction):
+        """Fixed signature: require interaction positional arg so callers must pass it explicitly."""
         page = HELP_PAGES[self.page]
         embed = discord.Embed(title=page["title"], description=page["desc"], color=discord.Color.blurple())
         embed.set_footer(text=f"Page {self.page+1}/{len(HELP_PAGES)} • Utilisateur: {interaction.user.display_name}")
@@ -533,25 +534,8 @@ class RoleView(discord.ui.View):
         if not role:
             await interaction.response.send_message("Rôle introuvable.", ephemeral=True)
             return
-        # add/remove buttons
-        view = discord.ui.View()
-        async def add_cb(i: discord.Interaction):
-            try:
-                await self.member.add_roles(role, reason=f"Ajouté par {interaction.user}")
-                await i.response.send_message(f"✅ Rôle {role.name} ajouté à {self.member.mention}", ephemeral=True)
-            except Exception:
-                await i.response.send_message("Erreur lors de l'ajout.", ephemeral=True)
-        async def rem_cb(i: discord.Interaction):
-            try:
-                await self.member.remove_roles(role, reason=f"Retiré par {interaction.user}")
-                await i.response.send_message(f"✅ Rôle {role.name} retiré à {self.member.mention}", ephemeral=True)
-            except Exception:
-                await i.response.send_message("Erreur lors du retrait.", ephemeral=True)
-        view.add_item(discord.ui.Button(label="Ajouter", style=discord.ButtonStyle.success, custom_id="add_role"))
-        view.add_item(discord.ui.Button(label="Retirer", style=discord.ButtonStyle.secondary, custom_id="remove_role"))
-        # attach callbacks to those buttons via ephemeral response (can't set callback via add_item easily outside class),
-        # We'll instead send ephemeral message explaining how to use the commands to avoid complexity:
-        await interaction.response.send_message(f"Pour ajouter : utilisez la commande `/roleadd <@user> <role>` (admin)\nPour retirer : `/roleremove <@user> <role>`", ephemeral=True)
+        # add/remove buttons -- to keep simple we provide quick admin commands after selection
+        await interaction.response.send_message(f"Rôle choisi : **{role.name}**\nUtilise `/roleadd @user {role.name}` ou `/roleremove @user {role.name}` (ou utilise les commandes +roleadd / +roleremove).", ephemeral=True)
 
 @bot.command(name="role")
 @commands.has_permissions(manage_roles=True)
