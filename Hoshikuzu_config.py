@@ -69,7 +69,7 @@ async def help_cmd(ctx):
     e.add_field(name="Tickets", value="`+ticket`", inline=False)
     await ctx.send(embed=e)
 
-# === Config View ===
+# === Config View corrigée ===
 class ConfigView(discord.ui.View):
     def __init__(self, guild, author_id, timeout=180):
         super().__init__(timeout=timeout)
@@ -80,16 +80,18 @@ class ConfigView(discord.ui.View):
         if not opts:
             opts = [discord.SelectOption(label="Aucun", value="0")]
 
-        # Chaque Select sur une ligne distincte
+        # Rows 0–2 : Select menus
         self.add_item(discord.ui.Select(placeholder="Salon logs", options=opts, custom_id="logs", row=0))
         self.add_item(discord.ui.Select(placeholder="Salon bienvenue", options=opts, custom_id="welcome", row=1))
         self.add_item(discord.ui.Select(placeholder="Salon au revoir", options=opts, custom_id="leave", row=2))
-        self.add_item(discord.ui.Select(placeholder="Salon des invitations", options=opts, custom_id="invites", row=3))
 
-        # Boutons chacun sur sa propre ligne
+        # Row 3 : Select + Button
+        self.add_item(discord.ui.Select(placeholder="Salon des invitations", options=opts, custom_id="invites", row=3))
+        self.add_item(discord.ui.Button(label="Définir role join", style=discord.ButtonStyle.blurple, custom_id="set_rolejoin", row=3))
+
+        # Row 4 : 2 Buttons
         self.add_item(discord.ui.Button(label="Activer allow_links", style=discord.ButtonStyle.green, custom_id="enable_links", row=4))
-        self.add_item(discord.ui.Button(label="Désactiver allow_links", style=discord.ButtonStyle.gray, custom_id="disable_links", row=5))
-        self.add_item(discord.ui.Button(label="Définir role join", style=discord.ButtonStyle.blurple, custom_id="set_rolejoin", row=6))
+        self.add_item(discord.ui.Button(label="Désactiver allow_links", style=discord.ButtonStyle.gray, custom_id="disable_links", row=4))
 
     async def interaction_check(self, interaction):
         if interaction.user.id != self.author_id and not interaction.user.guild_permissions.manage_guild:
