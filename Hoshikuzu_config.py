@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# ✅ Version corrigée du +config — plus d'erreur de "could not find open space for item"
+# ✅ Hoshikuzu_config.py — version corrigée sans erreur d’espace des composants
 
 import os, json, asyncio, threading, http.server, socketserver, datetime, traceback
 import discord
 from discord.ext import commands
 from typing import Optional
 
-# === Keep Alive ===
+# === Keep Alive (Render) ===
 def keep_alive():
     try:
         port = int(os.environ.get("PORT", 8080))
@@ -19,8 +19,9 @@ def keep_alive():
         httpd.serve_forever()
 threading.Thread(target=keep_alive, daemon=True).start()
 
-# === Data ===
+# === Data Management ===
 DATA_FILE = "hoshikuzu_data.json"
+
 def load_data():
     if os.path.exists(DATA_FILE):
         try:
@@ -29,6 +30,7 @@ def load_data():
         except Exception as e:
             print("load_data error:", e)
     return {"config": {}, "tickets": {}}
+
 def save_data(d):
     try:
         with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -37,11 +39,14 @@ def save_data(d):
         print("save_data error:", e)
 
 data = load_data()
+
 def get_conf(gid, key, default=None):
     return data.get("config", {}).get(str(gid), {}).get(key, default)
+
 def set_conf(gid, key, value):
     data.setdefault("config", {}).setdefault(str(gid), {})[key] = value
     save_data(data)
+
 def get_gconf(gid):
     return data.get("config", {}).get(str(gid), {})
 
@@ -75,17 +80,16 @@ class ConfigView(discord.ui.View):
         if not opts:
             opts = [discord.SelectOption(label="Aucun", value="0")]
 
-        # 1ère ligne
+        # Chaque Select sur une ligne distincte
         self.add_item(discord.ui.Select(placeholder="Salon logs", options=opts, custom_id="logs", row=0))
-        self.add_item(discord.ui.Select(placeholder="Salon bienvenue", options=opts, custom_id="welcome", row=0))
-        # 2e ligne
-        self.add_item(discord.ui.Select(placeholder="Salon au revoir", options=opts, custom_id="leave", row=1))
-        self.add_item(discord.ui.Select(placeholder="Salon des invitations", options=opts, custom_id="invites", row=1))
-        # 3e ligne
-        self.add_item(discord.ui.Button(label="Activer allow_links", style=discord.ButtonStyle.green, custom_id="enable_links", row=2))
-        self.add_item(discord.ui.Button(label="Désactiver allow_links", style=discord.ButtonStyle.gray, custom_id="disable_links", row=2))
-        # 4e ligne
-        self.add_item(discord.ui.Button(label="Définir role join", style=discord.ButtonStyle.blurple, custom_id="set_rolejoin", row=3))
+        self.add_item(discord.ui.Select(placeholder="Salon bienvenue", options=opts, custom_id="welcome", row=1))
+        self.add_item(discord.ui.Select(placeholder="Salon au revoir", options=opts, custom_id="leave", row=2))
+        self.add_item(discord.ui.Select(placeholder="Salon des invitations", options=opts, custom_id="invites", row=3))
+
+        # Boutons chacun sur sa propre ligne
+        self.add_item(discord.ui.Button(label="Activer allow_links", style=discord.ButtonStyle.green, custom_id="enable_links", row=4))
+        self.add_item(discord.ui.Button(label="Désactiver allow_links", style=discord.ButtonStyle.gray, custom_id="disable_links", row=5))
+        self.add_item(discord.ui.Button(label="Définir role join", style=discord.ButtonStyle.blurple, custom_id="set_rolejoin", row=6))
 
     async def interaction_check(self, interaction):
         if interaction.user.id != self.author_id and not interaction.user.guild_permissions.manage_guild:
