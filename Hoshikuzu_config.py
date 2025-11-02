@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ✅ Hoshikuzu_config.py — version corrigée sans erreur d’espace des composants
+# ✅ Hoshikuzu_config.py — version complète avec messages de bienvenue et d’au revoir
 
 import os, json, asyncio, threading, http.server, socketserver, datetime, traceback
 import discord
@@ -80,13 +80,10 @@ class ConfigView(discord.ui.View):
         if not opts:
             opts = [discord.SelectOption(label="Aucun", value="0")]
 
-        # Rows 0–3 : Select menus
         self.add_item(discord.ui.Select(placeholder="Salon logs", options=opts, custom_id="logs", row=0))
         self.add_item(discord.ui.Select(placeholder="Salon bienvenue", options=opts, custom_id="welcome", row=1))
         self.add_item(discord.ui.Select(placeholder="Salon au revoir", options=opts, custom_id="leave", row=2))
         self.add_item(discord.ui.Select(placeholder="Salon des invitations", options=opts, custom_id="invites", row=3))
-
-        # Row 4 : 3 boutons (max 5 unités)
         self.add_item(discord.ui.Button(label="Définir role join", style=discord.ButtonStyle.blurple, custom_id="set_rolejoin", row=4))
         self.add_item(discord.ui.Button(label="Activer allow_links", style=discord.ButtonStyle.green, custom_id="enable_links", row=4))
         self.add_item(discord.ui.Button(label="Désactiver allow_links", style=discord.ButtonStyle.gray, custom_id="disable_links", row=4))
@@ -147,14 +144,33 @@ async def config_cmd(ctx):
         traceback.print_exc()
         await ctx.send(f"❌ Erreur lors de l'ouverture du panneau : `{type(e).__name__}` — {e}")
 
-# === Ready ===
+# === Messages de bienvenue et au revoir ===
 @bot.event
-async def on_ready():
-    print(f"[Hoshikuzu Config] connecté comme {bot.user} ({bot.user.id})")
+async def on_member_join(member):
+    guild_id = member.guild.id
+    channel_id = get_conf(guild_id, "welcome_channel")
+    if channel_id:
+        channel = bot.get_channel(channel_id)
+        if channel:
+            total = member.guild.member_count
+            embed = discord.Embed(
+                title="🌿 Bienvenue !",
+                description=f"{member.mention} a rejoint le serveur.",
+                color=discord.Color.green()
+            )
+            embed.set_footer(text=f"Tu es le {total}ᵉ membre !")
+            await channel.send(embed=embed)
+            await channel.send(
+                f"{EMOJI} Bienvenue {member.mention} sur le serveur !\n"
+                f"{EMOJI} Tu es le **{total}ᵉ** membre !"
+            )
 
-# === Run ===
-TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-if not TOKEN:
-    print("❌ DISCORD_BOT_TOKEN non défini.")
-else:
-    bot.run(TOKEN)
+@bot.event
+async def on_member_remove(member):
+    guild_id = member.guild.id
+    channel_id = get_conf(guild_id, "leave_channel")
+    if channel_id:
+        channel = bot.get_channel(channel_id)
+        if channel:
+            total = member.guild.member_count
+            embed
