@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# Hoshikuzu_config.py — version corrigée et stable (config complète sans erreur)
+# ✅ Version corrigée du +config — plus d'erreur de "could not find open space for item"
 
 import os, json, asyncio, threading, http.server, socketserver, datetime, traceback
 import discord
 from discord.ext import commands
 from typing import Optional
 
-# === Keep Alive (Render) ===
+# === Keep Alive ===
 def keep_alive():
     try:
         port = int(os.environ.get("PORT", 8080))
@@ -21,7 +21,6 @@ threading.Thread(target=keep_alive, daemon=True).start()
 
 # === Data ===
 DATA_FILE = "hoshikuzu_data.json"
-
 def load_data():
     if os.path.exists(DATA_FILE):
         try:
@@ -30,7 +29,6 @@ def load_data():
         except Exception as e:
             print("load_data error:", e)
     return {"config": {}, "tickets": {}}
-
 def save_data(d):
     try:
         with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -39,14 +37,11 @@ def save_data(d):
         print("save_data error:", e)
 
 data = load_data()
-
 def get_conf(gid, key, default=None):
     return data.get("config", {}).get(str(gid), {}).get(key, default)
-
 def set_conf(gid, key, value):
     data.setdefault("config", {}).setdefault(str(gid), {})[key] = value
     save_data(data)
-
 def get_gconf(gid):
     return data.get("config", {}).get(str(gid), {})
 
@@ -55,7 +50,6 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 bot = commands.Bot(command_prefix="+", intents=intents, help_command=None)
-
 EMOJI = "<a:caarrow:1433143710094196997>"
 
 # === Help ===
@@ -81,24 +75,17 @@ class ConfigView(discord.ui.View):
         if not opts:
             opts = [discord.SelectOption(label="Aucun", value="0")]
 
-        # Première ligne
-        self.logs = discord.ui.Select(placeholder="Salon logs", options=opts, custom_id="logs_select")
-        self.add_item(self.logs)
-
-        self.welcome = discord.ui.Select(placeholder="Salon bienvenue", options=opts, custom_id="welcome_select")
-        self.add_item(self.welcome)
-
-        # Deuxième ligne
-        self.leave = discord.ui.Select(placeholder="Salon au revoir", options=opts, custom_id="leave_select")
-        self.add_item(self.leave)
-
-        self.invites = discord.ui.Select(placeholder="Salon des invitations", options=opts, custom_id="invites_select")
-        self.add_item(self.invites)
-
-        # Boutons (troisième ligne)
-        self.add_item(discord.ui.Button(label="Activer allow_links", style=discord.ButtonStyle.green, custom_id="enable_links"))
-        self.add_item(discord.ui.Button(label="Désactiver allow_links", style=discord.ButtonStyle.gray, custom_id="disable_links"))
-        self.add_item(discord.ui.Button(label="Définir role join", style=discord.ButtonStyle.blurple, custom_id="set_rolejoin"))
+        # 1ère ligne
+        self.add_item(discord.ui.Select(placeholder="Salon logs", options=opts, custom_id="logs", row=0))
+        self.add_item(discord.ui.Select(placeholder="Salon bienvenue", options=opts, custom_id="welcome", row=0))
+        # 2e ligne
+        self.add_item(discord.ui.Select(placeholder="Salon au revoir", options=opts, custom_id="leave", row=1))
+        self.add_item(discord.ui.Select(placeholder="Salon des invitations", options=opts, custom_id="invites", row=1))
+        # 3e ligne
+        self.add_item(discord.ui.Button(label="Activer allow_links", style=discord.ButtonStyle.green, custom_id="enable_links", row=2))
+        self.add_item(discord.ui.Button(label="Désactiver allow_links", style=discord.ButtonStyle.gray, custom_id="disable_links", row=2))
+        # 4e ligne
+        self.add_item(discord.ui.Button(label="Définir role join", style=discord.ButtonStyle.blurple, custom_id="set_rolejoin", row=3))
 
     async def interaction_check(self, interaction):
         if interaction.user.id != self.author_id and not interaction.user.guild_permissions.manage_guild:
@@ -106,54 +93,39 @@ class ConfigView(discord.ui.View):
             return False
         return True
 
-    async def on_select(self, interaction, select_id, val):
+    async def on_interaction(self, interaction: discord.Interaction):
         try:
-            val = int(val)
-            if select_id == "logs_select":
+            cid = interaction.data.get("custom_id")
+            val = None
+            if "values" in interaction.data:
+                val = int(interaction.data["values"][0])
+
+            if cid == "logs":
                 set_conf(self.guild.id, "logs_channel", val)
-                await interaction.response.send_message(f"✅ Logs: <#{val}>", ephemeral=True)
-            elif select_id == "welcome_select":
+                await interaction.response.send_message(f"✅ Salon logs défini : <#{val}>", ephemeral=True)
+            elif cid == "welcome":
                 set_conf(self.guild.id, "welcome_channel", val)
-                await interaction.response.send_message(f"✅ Bienvenue: <#{val}>", ephemeral=True)
-            elif select_id == "leave_select":
+                await interaction.response.send_message(f"✅ Salon bienvenue défini : <#{val}>", ephemeral=True)
+            elif cid == "leave":
                 set_conf(self.guild.id, "leave_channel", val)
-                await interaction.response.send_message(f"✅ Au revoir: <#{val}>", ephemeral=True)
-            elif select_id == "invites_select":
+                await interaction.response.send_message(f"✅ Salon au revoir défini : <#{val}>", ephemeral=True)
+            elif cid == "invites":
                 set_conf(self.guild.id, "invites_channel", val)
-                await interaction.response.send_message(f"✅ Invites: <#{val}>", ephemeral=True)
+                await interaction.response.send_message(f"✅ Salon des invitations défini : <#{val}>", ephemeral=True)
+            elif cid == "enable_links":
+                set_conf(self.guild.id, "allow_links_enabled", True)
+                await interaction.response.send_message("✅ allow_links activé.", ephemeral=True)
+            elif cid == "disable_links":
+                set_conf(self.guild.id, "allow_links_enabled", False)
+                set_conf(self.guild.id, "allow_links", [])
+                await interaction.response.send_message("✅ allow_links désactivé.", ephemeral=True)
+            elif cid == "set_rolejoin":
+                await interaction.response.send_message("ℹ️ Utilise `+rolejoin @Role` pour définir le rôle d’arrivée.", ephemeral=True)
         except Exception as e:
             traceback.print_exc()
             await interaction.response.send_message(f"Erreur : {e}", ephemeral=True)
 
-    @discord.ui.button(custom_id="enable_links", label="Activer allow_links", style=discord.ButtonStyle.green)
-    async def enable_links(self, b, i):
-        set_conf(self.guild.id, "allow_links_enabled", True)
-        await i.response.send_message("✅ allow_links activé.", ephemeral=True)
-
-    @discord.ui.button(custom_id="disable_links", label="Désactiver allow_links", style=discord.ButtonStyle.gray)
-    async def disable_links(self, b, i):
-        set_conf(self.guild.id, "allow_links_enabled", False)
-        set_conf(self.guild.id, "allow_links", [])
-        await i.response.send_message("✅ allow_links désactivé.", ephemeral=True)
-
-    @discord.ui.button(custom_id="set_rolejoin", label="Définir role join", style=discord.ButtonStyle.blurple)
-    async def set_rolejoin(self, b, i):
-        await i.response.send_message("ℹ️ Utilise `+rolejoin @Role`.", ephemeral=True)
-
-    async def interaction_check(self, interaction):
-        return True
-
-    async def interaction_check(self, interaction):
-        if interaction.user.id != self.author_id and not interaction.user.guild_permissions.manage_guild:
-            await interaction.response.send_message("❌ Tu n'es pas autorisé.", ephemeral=True)
-            return False
-        return True
-
-    async def on_timeout(self):
-        for item in self.children:
-            item.disabled = True
-
-# === CONFIG COMMAND ===
+# === Commande +config ===
 @bot.command(name="config")
 @commands.has_permissions(manage_guild=True)
 async def config_cmd(ctx):
@@ -169,7 +141,7 @@ async def config_cmd(ctx):
         await ctx.send(embed=e, view=view)
     except Exception as e:
         traceback.print_exc()
-        await ctx.send(f"❌ Erreur lors de l'ouverture du panneau de configuration : `{type(e).__name__}` — {e}")
+        await ctx.send(f"❌ Erreur lors de l'ouverture du panneau : `{type(e).__name__}` — {e}")
 
 # === Ready ===
 @bot.event
