@@ -4,6 +4,9 @@
 import os, json, threading, http.server, socketserver, traceback
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
+load_dotenv()
+
 
 # === Keep Alive (Render) ===
 def keep_alive():
