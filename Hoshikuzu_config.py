@@ -80,16 +80,14 @@ class ConfigView(discord.ui.View):
         if not opts:
             opts = [discord.SelectOption(label="Aucun", value="0")]
 
-        # Rows 0–2 : Select menus
+        # Rows 0–3 : Select menus
         self.add_item(discord.ui.Select(placeholder="Salon logs", options=opts, custom_id="logs", row=0))
         self.add_item(discord.ui.Select(placeholder="Salon bienvenue", options=opts, custom_id="welcome", row=1))
         self.add_item(discord.ui.Select(placeholder="Salon au revoir", options=opts, custom_id="leave", row=2))
-
-        # Row 3 : Select + Button
         self.add_item(discord.ui.Select(placeholder="Salon des invitations", options=opts, custom_id="invites", row=3))
-        self.add_item(discord.ui.Button(label="Définir role join", style=discord.ButtonStyle.blurple, custom_id="set_rolejoin", row=3))
 
-        # Row 4 : 2 Buttons
+        # Row 4 : 3 boutons (max 5 unités)
+        self.add_item(discord.ui.Button(label="Définir role join", style=discord.ButtonStyle.blurple, custom_id="set_rolejoin", row=4))
         self.add_item(discord.ui.Button(label="Activer allow_links", style=discord.ButtonStyle.green, custom_id="enable_links", row=4))
         self.add_item(discord.ui.Button(label="Désactiver allow_links", style=discord.ButtonStyle.gray, custom_id="disable_links", row=4))
 
