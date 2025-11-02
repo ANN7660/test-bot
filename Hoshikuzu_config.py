@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # ✅ Hoshikuzu_config.py — version complète avec messages de bienvenue et d’au revoir
 
-import os, json, asyncio, threading, http.server, socketserver, datetime, traceback
+import os, json, threading, http.server, socketserver, traceback
 import discord
 from discord.ext import commands
-from typing import Optional
 
 # === Keep Alive (Render) ===
 def keep_alive():
@@ -57,7 +56,7 @@ intents.members = True
 bot = commands.Bot(command_prefix="+", intents=intents, help_command=None)
 EMOJI = "<a:caarrow:1433143710094196997>"
 
-# === Help ===
+# === Help Command ===
 @bot.command(name="help")
 async def help_cmd(ctx):
     e = discord.Embed(title="🌿 Hoshikuzu — Config", color=discord.Color.green())
@@ -69,7 +68,7 @@ async def help_cmd(ctx):
     e.add_field(name="Tickets", value="`+ticket`", inline=False)
     await ctx.send(embed=e)
 
-# === Config View corrigée ===
+# === Config View ===
 class ConfigView(discord.ui.View):
     def __init__(self, guild, author_id, timeout=180):
         super().__init__(timeout=timeout)
@@ -170,7 +169,4 @@ async def on_member_remove(member):
     guild_id = member.guild.id
     channel_id = get_conf(guild_id, "leave_channel")
     if channel_id:
-        channel = bot.get_channel(channel_id)
-        if channel:
-            total = member.guild.member_count
-            embed
+        channel = bot.get_channel
